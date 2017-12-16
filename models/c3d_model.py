@@ -1,6 +1,6 @@
 # coding:utf-8
 from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Flatten
+from keras.layers.core import Dense, Dropout, Flatten, Reshape
 from keras.layers.convolutional import Conv3D, MaxPooling3D, ZeroPadding3D
 from keras.optimizers import SGD, Adam
 from keras.layers import LSTM
@@ -19,9 +19,9 @@ def get_model(summary=False, backend='tf'):
     """
     model = Sequential()
     if backend == 'tf':
-        input_shape=(16, 112, 112, 3) # l, h, w, c
+        input_shape=(30, 90, 160, 3) # l, h, w, c
     else:
-        input_shape=(3, 16, 112, 112) # c, l, h, w
+        input_shape=(3, 30, 90, 160) # c, l, h, w
     model.add(Conv3D(64, (3, 3, 3), activation='relu',
                             padding='same', name='conv1',
                             input_shape=input_shape))
@@ -65,9 +65,10 @@ def get_model(summary=False, backend='tf'):
         print(model.summary())
     return model
 def add_LSTM(model, output_dim):
-    model.add(Dense(5, activation='softmax', name='fc9'))
-    model.add(LSTM(256, input_shape=(1, 4096), dropout=0.2, return_sequences=True))
-    model.add(LSTM(256, dropout=0.2, name='LSTM_reg_output'))
+    #model.add(Dense(5, activation='softmax', name='fc9'))
+    #model.add(LSTM(256, input_shape=(1, 4096), dropout=0.2, return_sequences=True))
+    #model.add(LSTM(256, dropout=0.2, name='LSTM_reg_output'))
+    model.add(Reshape(output_dim, input_shape=(4096,)))
     model.add(Dense(output_dim))
 
     print(model.summary())
