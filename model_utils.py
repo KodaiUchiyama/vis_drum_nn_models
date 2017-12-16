@@ -1,5 +1,5 @@
 # coding:utf-8
-from exp_models.CNN_LSTM_models import *
+#from exp_models.CNN_LSTM_models import *
 from keras.utils.io_utils import HDF5Matrix
 from keras.callbacks import Callback
 from keras.models import save_model
@@ -14,7 +14,7 @@ import gc
 import math
 import sys
 from tqdm import tqdm
-
+import h5py
 ####################
 # Data related Utils
 #データをセットをロードしたのち返す関数
@@ -25,31 +25,31 @@ def load5hpyTrainData(data_name):
             dataY_train (HDF5Matrix object): keras object for loading h5py datasets
     """
     #data_dir = '/home/KODAI/MATLAB_vis_master/'
-    data_dir = '/Users/KODAI/Documents/vis_drum_master/'
+    data_dir = '/home/KODAI/vis_drum_master/'
     data_file = data_dir + data_name  # data_name = 'TopAngle100_dataX_dataY.h5' by default
 
     # Load first element of data to extract information on video
     with h5py.File(data_file, 'r') as hf:
         print("Reading train data from file..")
-        dataX_train = hf['dataX_train']  # Adding the [:] actually loads it into memory
+        #dataX_train = hf['dataX_train']  # Adding the [:] actually loads it into memory
         dataY_train = hf['dataY_train']
         dataZ_train = hf['dataZ_train']
-        print("dataX_train.shape:", dataX_train.shape)
+        #print("dataX_train.shape:", dataX_train.shape)
         print("dataY_train.shape:", dataY_train.shape)
         print("dataZ_train.shape:", dataZ_train.shape)
 
     # Load data into HDF5Matrix object, which reads the file from disk and does not put it into RAM
-    dataX_train = HDF5Matrix(data_file, 'dataX_train')
-    dataY_train = HDF5Matrix(data_file, 'dataY_train')
-    dataZ_train = HDF5Matrix(data_file, 'dataZ_train')
+    #dataX_train = HDF5Matrix(data_file, 'dataX_train')
+    #dataY_train = HDF5Matrix(data_file, 'dataY_train')
+    #dataZ_train = HDF5Matrix(data_file, 'dataZ_train')
     print("converting h5py to numpy...(only dataX Z  and dataY)")
     #dataX_train = HDF5Matrix(data_file, 'dataX_train',start=0,end=60000)
-    #dataY_train = HDF5Matrix(data_file, 'dataY_train',start=0,end=60000)
-    #dataZ_train = HDF5Matrix(data_file, 'dataZ_train',start=0,end=60000)
+    dataY_train = HDF5Matrix(data_file, 'dataY_train',start=0,end=6000)
+    dataZ_train = HDF5Matrix(data_file, 'dataZ_train',start=0,end=6000)
     #dataX_train = np.array(dataX_train)
     #dataY_train = np.array(dataY_train)
     #dataZ_train = np.array(dataZ_train)
-    return dataX_train, dataY_train, dataZ_train
+    return  dataY_train, dataZ_train
 
 
 def load5hpyTestData(data_name):
@@ -58,21 +58,21 @@ def load5hpyTestData(data_name):
             dataX_test (HDF5Matrix object): keras object for loading h5py datasets
             dataY_test (HDF5Matrix object): keras object for loading h5py datasets
     """
-    data_dir = '/home/KODAI/MATLAB_vis_master/'
+    data_dir = '/home/KODAI/vis_drum_master/'
     data_file = data_dir + data_name  # data_name = 'TopAngle100_dataX_dataY.h5' by default
 
     # Load first element of data to extract information on video
     with h5py.File(data_file, 'r') as hf:
         print("Reading test data from file..")
-        dataX_test = hf['dataX_test']
-        dataY_test = hf['dataY_test']
-        dataZ_test = hf['dataZ_test']
-        print("dataX_test.shape:", dataX_test.shape)
-        print("dataY_test.shape:", dataY_test.shape)
-        print("dataZ_test.shape:", dataZ_test.shape)
+        #dataX_test = hf['dataX_test']
+        #dataY_test = hf['dataY_test']
+        #dataZ_test = hf['dataZ_test']
+        #print("dataX_test.shape:", dataX_test.shape)
+        #print("dataY_test.shape:", dataY_test.shape)
+        #print("dataZ_test.shape:", dataZ_test.shape)
 
     # Load data into HDF5Matrix object, which reads the file from disk and does not put it into RAM
-    dataX_test = HDF5Matrix(data_file, 'dataX_test')
+    #dataX_test = HDF5Matrix(data_file, 'dataX_test')
     dataY_test = HDF5Matrix(data_file, 'dataY_test')
     dataZ_test = HDF5Matrix(data_file, 'dataZ_test')
 
@@ -92,19 +92,19 @@ def returnH5PYDatasetDims(data_name):
 
     """
 
-    #data_dir = '/home/KODAI/MATLAB_vis_master/'
-    data_dir = '/Users/KODAI/Documents/visz_drum_master/'
+    data_dir = '/home/KODAI/vis_drum_master/'
+    #data_dir = '/Users/KODAI/Documents/vis_drum_master/'
     data_file = data_dir + data_name  # data_name = 'vis_dataX_dataY.h5' by default
 
     with h5py.File(data_file, 'r') as hf:
         print("Reading data sample from file..")
-        dataX_sample = hf['dataX_train'][0]  # select one sample from (7233,244,244,3)
+        dataZ_sample = hf['dataZ_train'][0]  # select one sample from (7233,244,244,3)
         dataY_sample = hf['dataY_train'][0]
-        print("dataX_sample.shape:", dataX_sample.shape)
+        print("dataZ_sample.shape:", dataZ_sample.shape)
         print("dataY_sample.shape:", dataY_sample.shape)
 #
-    (num_frames,frame_h, frame_w, channels) = dataX_sample.shape  # (90,160,15)
-    audio_vector_dim = dataY_sample.shape[2]
+    (frame_h, frame_w, channels) = dataZ_sample.shape  # (90,160,15)
+    audio_vector_dim = dataY_sample.shape[0]
 #inputデータ（image）のshapeとoutputのgroundtruthのオーティオデータの型の次元を返す
     return frame_h, frame_w, channels, audio_vector_dim
 
