@@ -7,7 +7,7 @@ from keras.models import Model
 from keras.layers.core import Dense, Dropout, Activation, Flatten, Reshape
 from keras.layers.convolutional import Conv2D, MaxPooling2D, ZeroPadding2D
 from keras.optimizers import SGD, Adam
-from keras.layers import Dense, Dropout
+from keras.layers import Dense, Dropout, concatenate, multiply,dot
 from keras.layers import LSTM
 from keras.utils.io_utils import HDF5Matrix
 import h5py
@@ -97,11 +97,59 @@ def InceptionV3_model(image_dim, audio_vector_dim, learning_rate, weight_init, o
 
     x = Reshape((1, 1024))(x)
     x = LSTM(256, input_shape=(1, 1024), dropout=0.2, return_sequences=True)(x)
+    #x = LSTM(256, dropout=0.2, return_sequences=True)(x)
     x = LSTM(256, dropout=0.2, name='LSTM_reg_output')(x)
     network_output = Dense(output_dim)(x)#最後にオーディオデータの次元数にあわせる
 
     # this is the model we will train
     model = Model(inputs=base_model.input, outputs=network_output)
+    # first: train only the top layers (which were randomly initialized)
+    for layer in base_model.layers:
+        layer.trainable = False
+
+    model.compile(loss='mean_squared_error', optimizer=optimizer)
+    print(model.summary())
+    return model
+
+def InceptionV3_LSTM_model(image_dim, audio_vector_dim, learning_rate, weight_init, output_dim, optimizer):
+    #(img_rows, img_cols, img_channels) = image_dim
+    #すべての画像はこのサイズに変形される
+    DROPOUT = 0.2
+
+    img_width, img_height = 299 , 299
+    input_shape = (img_height, img_width, 3)
+    skel_input = Input(shape=(1,20))
+    ##################################
+    ##skeleton
+    y = LSTM(20, dropout=0.2, return_sequences=True)(skel_input)
+    y = LSTM(20, dropout=0.2, )(y)
+    y = BatchNormalization(epsilon=0.00001,beta_initializer='zeros', gamma_initializer='ones')(y)
+    y = Dense(20, activation='relu')(y)
+    y = Dropout(DROPOUT)(y)
+    ##################################
+    ##inception_v3
+    base_model = InceptionV3(include_top=False, input_shape=input_shape, weights='imagenet')
+    x = base_model.output
+    x = Flatten()(x)
+
+    x = Dense(1024, activation='relu')(x)
+    x = Dropout(DROPOUT)(x)
+    # Channel 1 - Cov Net Layer 8
+    x = Dense(1024, activation='relu')(x)
+    x = Dropout(DROPOUT)(x)
+
+
+    ###################################
+    ##marge
+    #x = concatenate([x, y])
+    x = dot([x, y])
+    x = Reshape((1, 1024))(x)
+    x = LSTM(256, input_shape=(1, 1024), dropout=0.2, return_sequences=True)(x)
+    x = LSTM(256, dropout=0.2, name='LSTM_reg_output')(x)
+    network_output = Dense(output_dim)(x)#最後にオーディオデータの次元数にあわせる
+
+    # this is the model we will train
+    model = Model(inputs=[base_model.input,skel_input], outputs=network_output)
     # first: train only the top layers (which were randomly initialized)
     for layer in base_model.layers:
         layer.trainable = False
