@@ -40,16 +40,19 @@ def load5hpyTrainData(data_name):
 
     # Load data into HDF5Matrix object, which reads the file from disk and does not put it into RAM
     #dataX_train = HDF5Matrix(data_file, 'dataX_train')
-    #dataY_train = HDF5Matrix(data_file, 'dataY_train')
-    #dataZ_train = HDF5Matrix(data_file, 'dataZ_train')
-    print("converting h5py to numpy...(only dataX Z  and dataY)")
+    dataY_train = HDF5Matrix(data_file, 'dataY_train')
+    dataZ_train = HDF5Matrix(data_file, 'dataZ_train')
     #dataX_train = HDF5Matrix(data_file, 'dataX_train',start=0,end=60000)
-    dataY_train = HDF5Matrix(data_file, 'dataY_train',start=0,end=6000)
-    dataZ_train = HDF5Matrix(data_file, 'dataZ_train',start=0,end=6000)
+    #dataY_train = HDF5Matrix(data_file, 'dataY_train',start=0,end=6000)
+    #dataZ_train = HDF5Matrix(data_file, 'dataZ_train',start=0,end=6000)
+    #データをnumpy形式の変換
+    print("convert h5 to numpy ...")
     #dataX_train = np.array(dataX_train)
-    #dataY_train = np.array(dataY_train)
-    #dataZ_train = np.array(dataZ_train)
-    return  dataY_train, dataZ_train
+    dataY_train = np.array(dataY_train)
+    dataZ_train = np.array(dataZ_train)
+    #np.save('3d_RGB_dataX.npy', dataX_train)
+    np.save('3d_RGB_dataY.npy', dataY_train)
+    np.save('3d_RGB_dataZ.npy', dataZ_train)
 
 
 def load5hpyTestData(data_name):
@@ -64,23 +67,66 @@ def load5hpyTestData(data_name):
     # Load first element of data to extract information on video
     with h5py.File(data_file, 'r') as hf:
         print("Reading test data from file..")
-        #dataX_test = hf['dataX_test']
-        #dataY_test = hf['dataY_test']
-        #dataZ_test = hf['dataZ_test']
-        #print("dataX_test.shape:", dataX_test.shape)
-        #print("dataY_test.shape:", dataY_test.shape)
+        dataX_test = hf['dataX_test']
+        dataY_test = hf['dataY_test']
+        #dataZ_test = hf['dataZ_train']
+        print("dataX_test.shape:", dataX_test.shape)
+        print("dataY_test.shape:", dataY_test.shape)
         #print("dataZ_test.shape:", dataZ_test.shape)
 
     # Load data into HDF5Matrix object, which reads the file from disk and does not put it into RAM
-    #dataX_test = HDF5Matrix(data_file, 'dataX_test')
+    dataX_test = HDF5Matrix(data_file, 'dataX_test')
     dataY_test = HDF5Matrix(data_file, 'dataY_test')
-    dataZ_test = HDF5Matrix(data_file, 'dataZ_test')
+    #dataZ_test = HDF5Matrix(data_file, 'dataZ_train')
 
-    print("converting h5py to numpy...")
+    #データをnumpy形式の変換
+    print("convert h5 to numpy ...")
     dataX_test = np.array(dataX_test)
     dataY_test = np.array(dataY_test)
-    dataZ_test = np.array(dataZ_test)
-    return dataX_test, dataY_test, dataZ_test
+    #dataZ_test = np.array(dataZ_test)
+    np.save('dataX_test.npy', dataX_test)
+    np.save('dataY_test.npy', dataY_test)
+    #np.save('dataZ_test.npy', dataZ_test)
+
+def load5hpyDetectionData(data_name):
+    """Load h5py data and return HDF5 object corresponding to X_train, Y_train
+        Returns:
+            dataX_train (HDF5Matrix object): keras object for loading h5py datasets
+            dataY_train (HDF5Matrix object): keras object for loading h5py datasets
+    """
+    #data_dir = '/home/KODAI/MATLAB_vis_master/'
+    data_dir = '/home/KODAI/vis_drum_master/'
+    data_file = data_dir + data_name  # data_name = 'TopAngle100_dataX_dataY.h5' by default
+
+    # Load first element of data to extract information on video
+    with h5py.File(data_file, 'r') as hf:
+        print("Reading detection data from file..")
+        dataX_train = hf['dataX_train']  # Adding the [:] actually loads it into memory
+        dataS_train = hf['dataS_train']
+        dataY_train = hf['dataY_train']
+        #dataZ_train = hf['dataZ_train']
+        print("dataS_train.shape:", dataS_train.shape)
+        print("dataX_train.shape:", dataX_train.shape)
+        print("dataY_train.shape:", dataY_train.shape)
+        #print("dataZ_train.shape:", dataZ_train.shape)
+
+    # Load data into HDF5Matrix object, which reads the file from disk and does not put it into RAM
+    dataS_train = HDF5Matrix(data_file, 'dataS_train')
+    dataX_train = HDF5Matrix(data_file, 'dataX_train')
+    dataY_train = HDF5Matrix(data_file, 'dataY_train')
+    #dataZ_train = HDF5Matrix(data_file, 'dataZ_train')
+    #データをnumpy形式の変換
+    print("convert h5 to numpy ...")
+    dataX_train = np.array(dataX_train)
+    dataS_train = np.array(dataS_train)
+    dataY_train = np.array(dataY_train)
+    #dataZ_train = np.array(dataZ_train)
+    np.save('train_space_detection_dataS.npy', dataS_train)
+    np.save('trian_space_detection_dataX.npy', dataX_train)
+    np.save('train_space_detection_dataY.npy', dataY_train)
+    #np.save('space_detection_dataZ.npy', dataZ_train)
+
+
 #データベースから一つサンプルを取り出してデータセットの型を返す関数
 def returnH5PYDatasetDims(data_name):
     """Load h5py data and return the dimensions of data in the dataet
@@ -93,7 +139,6 @@ def returnH5PYDatasetDims(data_name):
     """
 
     data_dir = '/home/KODAI/vis_drum_master/'
-    #data_dir = '/Users/KODAI/Documents/vis_drum_master/'
     data_file = data_dir + data_name  # data_name = 'vis_dataX_dataY.h5' by default
 
     with h5py.File(data_file, 'r') as hf:
