@@ -64,7 +64,7 @@ model_utils内の関数
         #load5hpyTrainData(data_name = train_data_name)
         #load5hpyTestData(data_name = test_data_name)
         #sys.exit()
-        
+
         #保存したnumpyデータを読み込み
         #dataY_train = np.load('./old_dataset/3d_RGB_dataY.npy')
         #dataZ_train = np.load('./old_dataset/3d_RGB_dataZ.npy')
@@ -74,19 +74,19 @@ model_utils内の関数
         print("dataS_train.shape:", dataS_train.shape)
         print("dataY_train.shape:", dataY_train.shape)
         print("dataZ_train.shape:", dataZ_train.shape)
-        
-        
+
+
         '''
         #配列をシャッフル
         dataZ_train, dataY_train = shuffle(dataZ_train, dataY_train)
-        
+
         new_dim_len = len(dataY_train)*30
         dataY_train = dataY_train.reshape((new_dim_len,audio_vector_dim))
         dataZ_train = dataZ_train.reshape((new_dim_len,frame_h,frame_w,channels))
         print("reshaped dataY_train.shape:", dataY_train.shape)
         print("reshaped dataZ_train.shape:", dataZ_train.shape)
         '''
-        
+
         dataS_val = np.load('val_space_detection_dataS.npy')
         dataY_val = np.load('val_space_detection_dataY.npy')
         dataZ_val = np.load('val_space_detection_dataX.npy')
@@ -115,8 +115,8 @@ model_utils内の関数
         # 寄与率
         print('explained variance ratio train: {}'.format(pca.explained_variance_ratio_))
         '''
-        
-        #データをトレーニングとテストに分割       
+
+        #データをトレーニングとテストに分割
         dataZ_train, dataZ_test, dataY_train, dataY_test,dataS_train, dataS_test  = train_test_split(dataZ_train, dataY_train,dataS_train,test_size=0.1, shuffle = False)
         #dataZ_train, dataZ_test, dataY_train, dataY_test  = train_test_split(dataZ_train, dataY_train,test_size=0.1, shuffle = False)
         print("dataY_train.shape:", dataY_train.shape)
@@ -125,7 +125,7 @@ model_utils内の関数
         print("dataY_test.shape:", dataY_test.shape)
         print("dataZ_test.shape:", dataZ_test.shape)
         print("dataS_test.shape:", dataS_test.shape)
-        
+
         '''
         #テスト
         pca = PCA(n_components=10)
@@ -134,14 +134,14 @@ model_utils内の関数
         # 寄与率
         print('explained variance ratio train: {}'.format(pca.explained_variance_ratio_))
         '''
-        
-        
+
+
         '''
         model = CNN_LSTM_model(image_dim=(frame_h,frame_w,channels),
                                audio_vector_dim=audio_vector_dim,
                                learning_rate=lr,
                                weight_init=ws)
-        
+
         '''
         '''
         model = create_model(image_dim=(frame_h,frame_w,channels),
@@ -159,14 +159,14 @@ model_utils内の関数
                               output_dim=output_dim,
                               optimizer=optimizer)
         '''
-        
+
         model = InceptionV3_LSTM_model(image_dim=(frame_h,frame_w,channels),
                               audio_vector_dim=audio_vector_dim,
                               learning_rate=lr,
                               weight_init=ws,
                               output_dim=output_dim,
                               optimizer=optimizer)
-        
+
         '''
         model = AlexNet_model(image_dim=(frame_h,frame_w,channels),
                               audio_vector_dim=audio_vector_dim,
@@ -216,15 +216,15 @@ model_utils内の関数
         es_cb = EarlyStopping(monitor='val_loss', patience=1, verbose=1, mode='auto')
         fit=model.fit([dataZ_train, dataS_train], dataY_train,shuffle=False,epochs=50, batch_size=30,verbose=1,validation_data=([dataZ_test,dataS_test], dataY_test), callbacks=[es_cb])
         model.save('detection_skel_mul_model.h5')
-        
-        
+
+
         #print("learning rate :",lr)
         #print("optimizer :",optimizer)
         #es_cb = EarlyStopping(monitor='val_loss', patience=1, verbose=1, mode='auto')
         #fit=model.fit(dataZ_train,dataY_train,shuffle=False,epochs=50, batch_size=30,verbose=1,validation_data=(dataZ_test, dataY_test), callbacks=[es_cb])
         #model.save('RGB_inception_model.h5')
-        
-        
+
+
         #可視化
         # フォルダの作成
         # make output directory
@@ -243,7 +243,7 @@ model_utils内の関数
             plt.ylim(0, 1.5)
         plot_history_loss(fit)
         plt.savefig(folder + '/detection_skel_mul_loss.pdf')
-        
+
 
         '''
         # Graph training history
@@ -265,7 +265,7 @@ model_utils内の関数
                                window_length = 300,
                                data_name=train_data_name)
         '''
-        
+
 
         '''
         #model = load_model('space_inception_model.h5',custom_objects={'custom_loss': custom_loss})
@@ -290,24 +290,7 @@ model_utils内の関数
         plt.ylabel('Frequency bands')
         plt.xlabel('Time (frames)')
         plt.colorbar()
-        '''
-        '''
-        plt.subplot(4, 1, 2)
-        #注釈を付ける
-        #plt.annotate('RMSE: %.3f' % (trainScore), xy=(5, 5), xytext=(5, 33))
-        plt.imshow(dataY_test_pca.T, aspect='auto') # (pred_idx:end_idx , 42) > (42 , pred_idx:end_idx)
-        plt.title('10dim Ground Truth')
-        plt.ylabel('Note bins')
-        plt.xlabel('Time (frames)')
 
-        plt.subplot(4, 1, 3)
-        plt.imshow(inversed_feature.T, aspect='auto')
-        plt.title('42dim Predicted feature')
-        plt.ylabel('Note bins')
-        plt.xlabel('Time (frames)')
-        '''
-
-        '''
         plt.subplot(2, 1, 2)
         plt.imshow(dataY_test[0:400].T, aspect='auto', vmin=-1.0, vmax=20.0)
         plt.title('42dim Ground Truth')
@@ -320,6 +303,7 @@ model_utils内の関数
         plt.savefig("predicted_spectrums3" + '.png')  # ../graphs/predicted_spectrums/{lr:0.000597}-{ws:0.000759}/1.png
         plt.close()
         '''
+        makeAudioWave(model,dataZ_val,dataY_val)
     #Once all trials are complete, make a 3D plot that graphs x: learning rate, y: weight scale and z: final_accuracy
     #ランダムに重みと学習率を生成して、三次元のグラフを作って、どのパラメータの値が効果的かを目視できる
     #plotAndSaveSession(learning_rates,weight_scales,final_accuracies)

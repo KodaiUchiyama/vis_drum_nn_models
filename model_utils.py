@@ -1,5 +1,7 @@
 # coding:utf-8
 #from exp_models.CNN_LSTM_models import *
+import scipy.io as sio
+from scipy import signal
 from keras.utils.io_utils import HDF5Matrix
 from keras.callbacks import Callback
 from keras.models import save_model
@@ -153,9 +155,104 @@ def returnH5PYDatasetDims(data_name):
 #inputデータ（image）のshapeとoutputのgroundtruthのオーティオデータの型の次元を返す
     return frame_h, frame_w, channels, audio_vector_dim
 
+#予測された音声特徴からexample base systhesisで波形データを作成
+def makeAudioWave(model,val_data,groundtruth_data):
+    Predicted_feature = model.predict(val_data)
+
+    #load 正解音声特徴データ
+    example_audio_feature = np.load('../audio_wave_sample/example_audio_feature.npy')
+    print("example_audio_feature.shape",example_audio_feature.shape)
+
+    #load 各audio waves sample
+    mat_contents = sio.loadmat('../audio_wave_sample/snare.mat')
+    snare_wavedata = mat_contents['snare_sample']
+    mat_contents = sio.loadmat('../audio_wave_sample/cymbal.mat')
+    cymbal_wavedata = mat_contents['cymbal_sample']
+    print("snare_wavedata.shape",snare_wavedata.shape)
+    #####shape check
+    print("predicted_feature_42dim",Predicted_feature.shape)
+
+    print("predicted_feature_max",np.max(Predicted_feature))
+    print("predicted_feature_min",np.min(Predicted_feature))
+    print("groundtruth_data_max",np.max(groundtruth_data))
+    print("groundtruth_data_min",np.min(groundtruth_data))
+
+    #列で平均をとる
+    mean_audio_vectors = np.mean(Predicted_feature, axis = 0,dtype = "float32")
+    #print(mean_audio_vectors[0:100])
+    #print("0.15以下０にする")
+    mean_audio_vectors[np.where(mean_audio_vectors < 0.15)] = 0
+    #15フレームずつをトリミングする際、両端付近に極大値が来ないよう0で端を埋める
+    mean_audio_vectors[0:20] = 0
+    mean_audio_vectors[Predicted_feature.shape[0]-20:Predicted_feature.shape[0]] = 0
+    #print(mean_audio_vectors[0:100])
+
+
+    #audio_vectorsの列平均値の極大値のインデックスを取得
+    maxId = signal.argrelmax(mean_audio_vectors)
+    print("maxId",maxId[0]);
+    maxId_length = len(maxId[0])
+    print("maxId_length",len(maxId[0]))
+
+    #極大値を淘汰する
+    max_array = []
+    for i in range(maxId_length):
+        #最後のid
+        if i == (maxId_length - 1):
+            max_array.append(maxId[0][i])
+            break;
+        if(maxId[0][i+1] < maxId[0][i]+10):#次のmaxが現在のmaxの10近傍以内にある
+            if(maxId[0][i] < maxId[0][i+1]):#次のmaxのほうが現在のmaxより大きい
+                #最後の1個手前では上記の条件が揃えば最後を入力
+                if i == (maxId_length - 2):
+                    max_array.append(maxId[0][i+1])
+                    break;
+                continue;
+        max_array.append(maxId[0][i])
+
+    #new max 配列check
+    print("max_array:",max_array)
+    print("max_array_len:",len(max_array))
+    exit()
+
+    #どの音かを記録する配列
+    sound_type = []
+    for i in range(len(max_array)):
+        left_id = max_array[i]-9
+        right_id = max_array[i]+21
+        trimed_predicted_feature = Predicted_feature[left_id:right_id,:]
+        #各max_arrayに対応する音種の選択現在は二択なので実直に書く
+        a = trimed_predicted_feature
+        b = example_audio_feature[0,:,:]
+        u = b - a
+        l1d_1 = np.linalg.norm(u)
+
+        b = example_audio_feature[1,:,:]
+        u = b - a
+        l1d_2 = np.linalg.norm(u)
+        if l1d_1 < l1d_2:
+            sound_type[i] = 0
+        else:
+            sound_type[i] = 1
+
+    num_frame = Predicted_feature.shape[0]
+    predicted_audiowave_len = num_frame * 540 + 540 * 2
+    predicted_audiowave = np.zeros((1,predicted_audiowave_len), dtype=np.float32)
+    print("predicted_audiowave.shape",predicted_audiowave.shape)
+
+    for i in len(max_array):
+        center_id = (max_array[i]+1) * 540 + 270
+        left_id = center_id - 5670
+        right_id = center_id + 12150
+        if sound_type[i] == 0:
+            predicted_audiowave[1,left_id:right_id] = snare_wavedata.T
+        else:
+            predicted_audiowave[1,left_id:right_id] = cymbal_wavedata.T
+    exit()
+    # mat保存
+    #scipy.io.savemat("predicted_audiowave.mat", {'predicted_audiowave':predicted_audiowave})
 ########################
 # Custom Keras Callbacks
-
 class saveModelOnEpochEnd(Callback):
     """Custom callback for Keras which saves model on epoch end"""
     def on_epoch_end(self, epoch, logs={}):
